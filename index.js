@@ -1,3 +1,6 @@
+require("express-async-errors")
+const winston = require('winston')
+const config = require('config')
 const Joi = require('joi');
 Joi.objectId = require('joi-objectid')(Joi)
 const mongoose = require('mongoose')
@@ -5,7 +8,16 @@ const genres = require('./routes/genres')
 const customer = require('./routes/customer')
 const express = require('express')
 const app = express()
+const users = require('./routes/users')
+const auth = require('./routes/auth')
+const error = require('./middlware/error')
 
+winston.add(winston.transports.File , {filename: 'logfile.log'})
+
+// if(!config.get('jwtPrivateKey')){
+//     console.error('jwtPrivatekey Not defined')
+//     process.exit(1)
+// }
 mongoose.connect('mongodb://localhost/vidly')
     .then(() => console.log('connect to mongoDB '))
     .catch(err => console.err('could not connect', err.message))
@@ -13,6 +25,11 @@ mongoose.connect('mongodb://localhost/vidly')
 app.use(express.json())
 app.use('/api/genres' , genres)
 app.use('/api/customer' , customer)
+app.use('/api/users' , users)
+app.use('/api/auth' , auth)
+
+app.use(error)
+
 app.listen(3000)
 const courseSchema = new mongoose.Schema({
     name: {
