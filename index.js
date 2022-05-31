@@ -1,63 +1,57 @@
 require("express-async-errors")
-const winston = require('winston')
-const config = require('config')
-const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi)
 const mongoose = require('mongoose')
-const genres = require('./routes/genres')
-const customer = require('./routes/customer')
+const winston = require('winston')
+
 const express = require('express')
 const app = express()
-const users = require('./routes/users')
-const auth = require('./routes/auth')
-const error = require('./middlware/error')
 
-winston.add(winston.transports.File , {filename: 'logfile.log'})
-
-// if(!config.get('jwtPrivateKey')){
-//     console.error('jwtPrivatekey Not defined')
+require('./startup/routes')(app);
+require('./startup/db')();
+require('./startup/logging')()
+require('./startup/config')()
+require('./startup/validation')()
+// process.on('uncaughtException' , (ex) =>{
+//     // console.log('we got folan exeption');
+//     winston.error(ex.message , ex)
 //     process.exit(1)
-// }
-mongoose.connect('mongodb://localhost/vidly')
-    .then(() => console.log('connect to mongoDB '))
-    .catch(err => console.err('could not connect', err.message))
+// })
 
-app.use(express.json())
-app.use('/api/genres' , genres)
-app.use('/api/customer' , customer)
-app.use('/api/users' , users)
-app.use('/api/auth' , auth)
 
-app.use(error)
+// const p = Promise.reject(new Error('s th fail'));
+// p.then(() => console.log('done'))
 
-app.listen(3000)
+// throw new Error("something fail during start")
+
+
+const port = process.env.PORT || 3000
+app.listen(port , () => winston.info(`Listening on port ${port} ...`))
 const courseSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        minlength : 5,
-        maxlength : 255
+        minlength: 5,
+        maxlength: 255
     },
-    category:{
-        type : String,
-        enum:['web' , 'mobile'],
-        lowercase : true,
-        trim : true
+    category: {
+        type: String,
+        enum: ['web', 'mobile'],
+        lowercase: true,
+        trim: true
     },
     auther: String,
     tag: {
-        type : Array,
-        validate:{
-            validator: function(v){
+        type: Array,
+        validate: {
+            validator: function (v) {
                 return v && v.length > 0
             },
             message: 'A course should have atleast one tag'
         }
     },
     price: {
-        type : Number,
-        required: function() {return this.isPublished;},
-        min : 10 ,
+        type: Number,
+        required: function () { return this.isPublished; },
+        min: 10,
         max: 200,
         get: v => Math.round(v),
         set: v => Math.round(v)
@@ -72,7 +66,7 @@ async function createCourse() {
         auther: "fatemeh",
         category: "webb",
         tag: ["back"],
-        price : 15.8,
+        price: 15.8,
         isPublished: true
     })
     try {
@@ -80,7 +74,7 @@ async function createCourse() {
         console.log(result)
     }
     catch (ex) {
-        for(field in ex.errors)
+        for (field in ex.errors)
             console.log(ex.errors[field].message)
     }
 
